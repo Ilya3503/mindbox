@@ -17,3 +17,54 @@ spec:
   ## Поскольку 4 пода выдерживают пиковую нагрузку - на это количество мы должны ориентироваться.
   ## Чтобы избежать даунтайма, и не убивать сразу много подов при обновлении,
   ## за раз обновлять будем 25% - 1 под из 4
+
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+      - name: app
+        image: nginx:alpine
+        ports:
+        - containerPort: 8000
+        ## Для примера пусть будет минимальный образ Nginx, порт 8000
+
+
+        ## Мы знаем, что память потребляется всегда в районе 128мб
+        ## Процессор 0.1, однако на старте надо дать побольше
+
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          ## Минимально запросили 128мб и 0.1 CPU, меньше точно не вариант
+          limits:
+            cpu: 300m
+            memory: 256Mi
+        ## Даём запас ресурсов, CPU для более быстрого старта и обработки первых запросов
+
+        ## Приложение стартует 5-10 секунд. Значит, если поставить пробы готовности слишком рано,
+        ## то они будут убивать под, когда он ещё не успел запуститься. Для этого ставим StartupProbe
+
+        startupProbe:
+          httpGet:
+            path: /health # эндпоинт, который возвращает просто status: ok, да даже просто 200-ого кода достаточно
+            port: 8000
+          failureThreshold: 12
+          periodSeconds: 2
+          timeoutSeconds: 1
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          periodSeconds: 5
+          failureThreshold: 3
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          periodSeconds: 10
+          failureThreshold: 3
