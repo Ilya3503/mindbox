@@ -30,7 +30,6 @@ spec:
         - containerPort: 8000
         ## Для примера пусть будет минимальный образ Nginx, порт 8000
 
-
         ## Мы знаем, что память потребляется всегда в районе 128мб
         ## Процессор 0.1, однако на старте надо дать побольше
 
@@ -68,3 +67,21 @@ spec:
             port: 8000
           periodSeconds: 10
           failureThreshold: 3
+
+      ## Добавляем работу с нодами и зонами. Нам важно, чтобы между зонами и нодами поды
+      ## были распределены примерно равномерно. Разница (skew) не более 1.
+      ## По topologyKey мы определяем, на каком уровне мы работаем: на уровне зоны (датацентра) или на уровне ноды (сервера)
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: web-app
+
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: web-app
