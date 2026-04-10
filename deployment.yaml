@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  labels:
+    app: web-app
+spec:
+  selector:
+    matchLabels:
+      app: web-app
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  ## Поскольку 4 пода выдерживают пиковую нагрузку - на это количество мы должны ориентироваться.
+  ## Чтобы избежать даунтайма, и не убивать сразу много подов при обновлении,
+  ## за раз обновлять будем 25% - 1 под из 4
